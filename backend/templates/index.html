@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Bildirici - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-sms"></i> SMS Bildirici</h1>
+                <div class="header-actions">
+                    <button class="btn btn-refresh" onclick="refreshSMS()">
+                        <i class="fas fa-sync-alt"></i> Yenile
+                    </button>
+                    <div class="status-indicator" id="statusIndicator">
+                        <i class="fas fa-circle"></i> Bağlı
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card stat-total">
+                <div class="stat-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">Toplam SMS</div>
+                </div>
+            </div>
+            <div class="stat-card stat-unread">
+                <div class="stat-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statUnread">0</div>
+                    <div class="stat-label">Okunmamış</div>
+                </div>
+            </div>
+            <div class="stat-card stat-read">
+                <div class="stat-icon">
+                    <i class="fas fa-envelope-open"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statRead">0</div>
+                    <div class="stat-label">Okunmuş</div>
+                </div>
+            </div>
+            <div class="stat-card stat-recent">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statRecent">0</div>
+                    <div class="stat-label">Son 24 Saat</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Gönderen veya mesaj ara..." onkeyup="filterSMS()">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="setFilter('all')" data-filter="all">
+                    <i class="fas fa-list"></i> Tümü
+                </button>
+                <button class="filter-btn" onclick="setFilter('unread')" data-filter="unread">
+                    <i class="fas fa-envelope"></i> Okunmamış
+                </button>
+                <button class="filter-btn" onclick="setFilter('read')" data-filter="read">
+                    <i class="fas fa-envelope-open"></i> Okunmuş
+                </button>
+            </div>
+        </div>
+
+        <!-- SMS List -->
+        <div class="sms-container">
+            <div id="smsList" class="sms-list">
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SMS Detail Modal -->
+    <div id="smsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalSender">Gönderen</h2>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-meta">
+                    <span id="modalTime"></span>
+                    <span id="modalStatus"></span>
+                </div>
+                <div class="modal-message" id="modalMessage"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Kapat</button>
+                <button class="btn btn-primary" id="markReadBtn" onclick="toggleRead()">Okundu İşaretle</button>
+                <button class="btn btn-danger" id="deleteBtn" onclick="deleteSMS()">Sil</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

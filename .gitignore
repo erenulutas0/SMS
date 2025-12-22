@@ -1,0 +1,34 @@
+# System & Environment
+venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Backend Data (Sensitive!)
+backend/sms_storage.json
+sms_storage.json
+last_checked.json
+adb_dump.txt
+adb_dump_*.txt
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android
+android_app/build/
+android_app/.gradle/
+android_app/local.properties

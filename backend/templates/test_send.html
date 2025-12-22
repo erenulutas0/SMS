@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test SMS Gönder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e293b;
+            color: #f1f5f9;
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #334155;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test SMS Gönder</h1>
+    <p>Bu sayfa test SMS'leri göndermek için kullanılabilir.</p>
+    
+    <button onclick="sendTestSMS()">Test SMS Gönder</button>
+    <button onclick="sendMultipleSMS()">5 Test SMS Gönder</button>
+    <button onclick="checkSMS()">SMS'leri Kontrol Et</button>
+    
+    <div id="result" class="result" style="display:none;"></div>
+
+    <script>
+        async function sendTestSMS() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Gönderiliyor...';
+            
+            try {
+                const response = await fetch('/api/sms', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        sender: '+905551234567',
+                        message: 'Bu bir test mesajidir! ' + new Date().toLocaleTimeString('tr-TR')
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    resultDiv.innerHTML = '<strong style="color: #10b981;">✓ SMS gönderildi!</strong><br>' + 
+                        JSON.stringify(data, null, 2);
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    resultDiv.innerHTML = '<strong style="color: #ef4444;">✗ Hata:</strong> ' + 
+                        JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<strong style="color: #ef4444;">✗ Hata:</strong> ' + error.message;
+            }
+        }
+
+        async function sendMultipleSMS() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '5 SMS gönderiliyor...';
+            
+            const messages = [
+                {sender: '+905551234567', message: 'Merhaba! Bu bir test mesajidir.'},
+                {sender: 'Banka', message: 'Hesabiniza 1000 TL yatirildi. Iyi gunler!'},
+                {sender: '5551234567', message: 'Toplanti yarin saat 14:00\'te yapilacak.'},
+                {sender: 'Siparis', message: 'Siparisiniz kargoya verildi. Takip no: ABC123'},
+                {sender: 'Bildirim', message: 'Yeni bildiriminiz var. Kontrol edin!'}
+            ];
+            
+            let success = 0;
+            for (let i = 0; i < messages.length; i++) {
+                try {
+                    const response = await fetch('/api/sms', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(messages[i])
+                    });
+                    if (response.ok) success++;
+                    await new Promise(r => setTimeout(r, 200));
+                } catch (error) {
+                    console.error('Hata:', error);
+                }
+            }
+            
+            resultDiv.innerHTML = `<strong style="color: #10b981;">✓ ${success} SMS gönderildi!</strong>`;
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        }
+
+        async function checkSMS() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Kontrol ediliyor...';
+            
+            try {
+                const response = await fetch('/api/sms');
+                const data = await response.json();
+                const count = data.sms_list ? data.sms_list.length : 0;
+                resultDiv.innerHTML = `<strong>Toplam SMS: ${count}</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = '<strong style="color: #ef4444;">✗ Hata:</strong> ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
+
