@@ -15,6 +15,14 @@ sms_storage.json
 last_checked.json
 adb_dump.txt
 adb_dump_*.txt
+blocked_senders.json
+sms_debug.txt
+
+# Build Artifacts
+dist/
+build/
+build_*/
+
 
 # Frontend
 frontend/node_modules/
