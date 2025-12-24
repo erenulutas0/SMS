@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="top">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SMS Server"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#333"
+        android:layout_marginBottom="32dp"
+        android:gravity="center_horizontal" />
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:elevation="4dp">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:background="#F5F5F5">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CONNECTION INFO"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#666"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/ipAddressText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Checking..."
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#007BFF" />
+            
+             <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Port: 8080"
+                android:textSize="14sp"
+                android:textColor="#444"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Service Switch -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Server Service"
+                android:textSize="18sp"
+                android:textColor="#000" />
+            <Switch
+                android:id="@+id/serviceSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true" />
+        </RelativeLayout>
+        
+        <TextView
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:text="Turn on to start the web server."
+             android:textSize="12sp"
+             android:textColor="#888"
+             android:paddingStart="12dp"
+             android:paddingBottom="12dp"/>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEE" />
+
+        <!-- SMS Permissions Switch -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SMS Permissions"
+                android:textSize="18sp"
+                android:textColor="#000" />
+            <Switch
+                android:id="@+id/permissionSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true" />
+        </RelativeLayout>
+        
+         <TextView
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:text="Required to read and receive messages."
+             android:textSize="12sp"
+             android:textColor="#888"
+             android:paddingStart="12dp"
+             android:paddingBottom="12dp"/>
+             
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEE" />
+
+        <!-- Battery Switch -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Background Mode"
+                android:textSize="18sp"
+                android:textColor="#000" />
+            <Switch
+                android:id="@+id/backgroundSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true" />
+        </RelativeLayout>
+        
+         <TextView
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:text="Prevents the app from sleeping in background."
+             android:textSize="12sp"
+             android:textColor="#888"
+             android:paddingStart="12dp"
+             android:paddingBottom="12dp"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/statusLabels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:gravity="center"
+        android:layout_marginTop="20dp"
+        android:textColor="#888" />
+
+</LinearLayout>

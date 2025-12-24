@@ -1,9 +1,8 @@
 import axios from 'axios';
 
-// In production (served by Flask), relative path works best.
-// In dev (Vite), we might need a proxy or full URL.
-const isDev = import.meta.env.DEV;
-const API_URL = isDev ? 'http://localhost:5000/api' : '/api';
+// Ensure we point to the correct port 5001 where the new backend runs
+// Using absolute URL to avoid any relative path ambiguity in hybrid mode
+const API_URL = 'http://127.0.0.1:5001/api';
 
 export const api = {
     // Devices
@@ -17,9 +16,10 @@ export const api = {
         }
     },
 
-    connectDevice: async (serial) => {
+    connectDevice: async (identifier, isIp = false) => {
         try {
-            const response = await axios.post(`${API_URL}/connect`, { serial });
+            const payload = isIp ? { ip: identifier } : { serial: identifier };
+            const response = await axios.post(`${API_URL}/connect`, payload);
             return response.data;
         } catch (error) {
             console.error("Error connecting device:", error);
@@ -91,9 +91,58 @@ export const api = {
         }
     },
 
-    // Get server config/IP (if implemented backend side, else mock/fail)
+    // Disconnect
+    disconnect: async () => {
+        try {
+            const response = await axios.post(`${API_URL}/disconnect`);
+            return response.data;
+        } catch (error) {
+            console.error("Error disconnecting:", error);
+            return { success: false };
+        }
+    },
+
+    // Get Connection Logs
+    getLogs: async () => {
+        try {
+            const response = await axios.get(`${API_URL}/logs`);
+            return response.data.logs || [];
+        } catch (error) {
+            console.error("Error fetching logs:", error);
+            return [];
+        }
+    },
+
+    // Get Config
     getConfig: async () => {
-        // Future proofing
-        return {};
+        try {
+            const response = await axios.get(`${API_URL}/config`);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching config:", error);
+            return { sound_enabled: true, notification_enabled: true };
+        }
+    },
+
+    // Test Notification
+    testNotification: async () => {
+        try {
+            const response = await axios.post(`${API_URL}/test_notification`);
+            return response.data;
+        } catch (error) {
+            console.error("Error testing notification:", error);
+            return { success: false };
+        }
+    },
+
+    // Save Config
+    saveConfig: async (config) => {
+        try {
+            const response = await axios.post(`${API_URL}/config`, config);
+            return response.data;
+        } catch (error) {
+            console.error("Error saving config:", error);
+            return { success: false };
+        }
     }
 };

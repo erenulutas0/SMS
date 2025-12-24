@@ -1,99 +1,73 @@
-# 📱 SMS Sync: Android to Desktop
+# SMS Senkronizasyon (SMS Sync)
 
-**SMS Sync** is a modern, open-source application that bridges your Android phone and Windows desktop. It synchronizes your SMS messages in real-time using **ADB (Android Debug Bridge)** and displays them in a sleek, **Dark Mode React UI**.
+Bu proje, Android cihazınızdaki SMS'leri masaüstü bilgisayarınızla (Windows) senkronize eden, bildirimleri anlık olarak masaüstünde gösteren ve modern bir arayüz sunan kapsamlı bir uygulamadır.
 
-![Project Screenshot](https://via.placeholder.com/1200x600?text=SMS+Sync+Dashboard)
+## 🚀 Özellikler
 
-## ✨ Features
+*   **Çift Bağlantı Modu:**
+    *   **USB (ADB):** Kablolu bağlantı ile hızlı ve kararlı senkronizasyon.
+    *   **WiFi:** Aynı ağ üzerindeki cihazlar için kablosuz bağlantı.
+*   **Masaüstü Bildirimleri:** Yeni mesaj geldiğinde Windows sağ alt köşesinde (Toast) bildirim gösterir.
+*   **Özel Sesli Uyarı:** Mesaj geldiğinde özel zil sesi (`ringtone.mp3`) çalar (PowerShell entegrasyonu ile MP3 desteği).
+*   **Modern Arayüz:** React ile hazırlanmış şık, karanlık mod destekli kullanıcı arayüzü.
+*   **Arka Plan Servisi:** Uygulama penceresi kapatılsa bile sistem tepsisinde (System Tray) çalışmaya devam eder.
+*   **Android Uygulaması:** Arka planda kesintisiz çalışabilen, pil optimizasyonlarını yöneten native Kotlin uygulaması.
+*   **Ayarlar:** Ses ve masaüstü bildirimlerini açıp kapatma imkanı.
+*   **Engelleme:** İstenmeyen göndericileri (spam) engelleme özelliği.
 
-*   **⚡ Real-Time Sync**: Instantly fetches messages from your phone via USB (ADB).
-*   **🎨 Modern UI**: Beautiful, responsive dashboard built with **React**, **Vite**, and **Tailwind CSS**.
-*   **🌑 Dark Mode**: Easy on the eyes with a premium dark theme.
-*   **🔍 Search**: Quickly find messages by sender or content.
-*   **🔒 Privacy Focused**: Data is stored locally on your machine. No external servers involved.
-*   **📦 Zero-App Dependency**: Uses ADB directly, so you don't strictly *need* to install an APK on your phone if USB debugging is enabled.
+## 🛠️ Kurulum ve Çalıştırma
 
-## 🛠️ Tech Stack
+### 1. Gereksinimler
+*   **Windows 10/11**
+*   **Python 3.10+** (Geliştirme için)
+*   **Node.js** (Frontend geliştirme için)
+*   **Android Telefon** (Geliştirici seçenekleri ve USB Hata Ayıklama açık olmalıdır)
 
-*   **Frontend**: React.js, Vite, Tailwind CSS, Lucide Icons
-*   **Backend**: Python, Flask
-*   **Sync**: Python (ADB Shell)
+### 2. Uygulamayı Derleme (Build)
+Uygulamayı tek bir `.exe` haline getirmek için hazır bir script bulunmaktadır:
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-*   **Python 3.8+** installed.
-*   **Node.js** (for the frontend).
-*   **ADB (Android Debug Bridge)** installed and added to your system PATH.
-    *   *Windows*: [Download Platform Tools](https://developer.android.com/studio/releases/platform-tools)
-*   **Android Phone** with **USB Debugging** enabled.
-
-### 📥 Installation
-
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/erenulutas0/SMS.git
-    cd SMS
-    ```
-
-2.  **Setup the Backend**:
-    ```bash
-    # Create virtual environment
-    python -m venv venv
-    
-    # Activate script (Windows)
-    .\venv\Scripts\activate
-    
-    # Install dependencies
-    pip install -r requirements.txt
-    ```
-
-3.  **Setup the Frontend**:
-    ```bash
-    cd frontend
-    npm install
-    cd ..
-    ```
-
-## 🎮 Usage
-
-You can run the entire system with a single script, or run components individually.
-
-### Option 1: One-Click Start (Recommended)
-
-1.  Connect your Android phone via USB.
-2.  Double-click **`start_modern_app.bat`** to start the Backend and Web UI.
-3.  Double-click **`start_adb_sync.bat`** to start the SMS extraction engine.
-4.  Open your browser at **http://localhost:5173**.
-
-### Option 2: Manual Start
-
-**1. Start Backend:**
-```bash
-python backend/app.py
+```bat
+build_v3.bat
 ```
 
-**2. Start Frontend:**
-```bash
-cd frontend
-npm run dev
-```
+Bu işlem:
+1.  Frontend'i (`React`) derler (`npm run build`).
+2.  Backend'i (`Flask`) ve gerekli tüm dosyaları `PyInstaller` ile paketler.
+3.  Çıktıyı `SMSSync_Final_vX` klasörüne taşır.
 
-**3. Start Syncing:**
-```bash
-python adb_sync.py
-```
+### 3. Kullanım
 
-## ⚠️ Important Notes
+1.  **Android Uygulaması:**
+    *   Projedeki `android_app` klasörünü Android Studio ile açın ve telefonunuza yükleyin.
+    *   Uygulamayı açın ve gerekli tüm izinleri (SMS okuma, Bildirim, Pil Optimizasyonu) verin.
+    *   "Servisi Başlat" butonuna basın.
 
-*   **USB Debugging**: You must accept the USB Debugging prompt on your phone when you first connect it.
-*   **Sensitive Data**: Messages are stored in `backend/sms_storage.json`. This file is **ignored** in git to protect your privacy. Do not commit it manually.
+2.  **Masaüstü Uygulaması:**
+    *   Derlenen `.exe` dosyasını çalıştırın.
+    *   **USB Modu:** Telefonu USB ile bağlayın ve ADB'nin tanıdığından emin olun.
+    *   **WiFi Modu:** Telefondaki IP adresini masaüstü uygulamasındaki "Cihaz Bağla" menüsüne girin.
 
-## 🤝 Contributing
+3.  **Ayarlar:**
+    *   Ayarlar menüsünden "Sesli Bildirim" ve "Masaüstü Bildirimi" seçeneklerini yönetebilirsiniz.
+    *   "Test Bildirimi" butonu ile sistemin çalışıp çalışmadığını kontrol edebilirsiniz.
 
-Contributions are welcome! Feel free to open issues or submit pull requests.
+## 📂 Proje Yapısı
 
-## 📄 License
+*   `android_app/`: Kotlin ile yazılmış Android istemcisi.
+*   `backend/`: Python (Flask) tabanlı sunucu ve masaüstü mantığı.
+    *   `app.py`: Ana uygulama döngüsü, API ve Tray yönetimi.
+    *   `wifi_syncer.py` & `adb_manager.py`: Bağlantı yöneticileri.
+*   `frontend/`: React tabanlı modern arayüz.
+*   `build_v3.bat`: Windows için otomatik derleme scripti.
 
-This project is licensed under the MIT License.
+## ⚠️ Güvenlik ve Notlar
+
+*   `config.json`, `blocked_senders.json` ve `sms_storage.json` dosyaları kullanıcının yerel verilerini tutar ve `.gitignore` ile repoya gönderilmesi engellenmiştir.
+*   Uygulama yerel ağ (Localhost/LAN) üzerinde çalışır, dış internete veri göndermez.
+
+## 🤝 Katkıda Bulunma
+
+Pull request göndermekten çekinmeyin! Hataları `Issues` sekmesinden bildirebilirsiniz.
+
+---
+**Geliştirici:** Eren Ulutaş

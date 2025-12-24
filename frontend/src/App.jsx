@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { api } from './services/api';
 import { cn, parseDate, formatDate } from './lib/utils';
-import { Search, MessageSquare, Phone, Bell, Menu, RefreshCw, Smartphone, Plug, CheckCircle2, XCircle, Settings, Ban } from 'lucide-react';
+import { Search, MessageSquare, Phone, Bell, Menu, RefreshCw, Smartphone, Plug, CheckCircle2, XCircle, Settings, Ban, Wifi, History, Power } from 'lucide-react';
 
 // Helper to safely parse dates moved to utils
 
@@ -52,6 +52,15 @@ function App() {
   const [devices, setDevices] = useState([]);
   const [syncStatus, setSyncStatus] = useState({ active: false, device: null });
   const [connecting, setConnecting] = useState(false);
+  const [manualIp, setManualIp] = useState('');
+
+  // Logs State
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [logs, setLogs] = useState([]);
+
+  // Settings State
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [appConfig, setAppConfig] = useState({ sound_enabled: true, notification_enabled: true });
 
   const fetchData = async () => {
     setLoading(true);
@@ -70,11 +79,49 @@ function App() {
     setDevices(list);
   };
 
-  const handleConnect = async (serial) => {
+  const handleConnect = async (identifier, isIp = false) => {
     setConnecting(true);
-    await api.connectDevice(serial);
+    await api.connectDevice(identifier, isIp);
     setConnecting(false);
     await fetchData(); // Refresh status
+  };
+
+  const handleDisconnect = async () => {
+    if (confirm("Bağlantıyı kesmek istediğinize emin misiniz? Mevcut mesajlar temizlenecektir.")) {
+      await api.disconnect();
+      setMessages([]); // Clear locally immediately
+      setSelectedSender(null);
+      await fetchData(); // Refresh status
+    }
+  };
+
+  const openLogs = async () => {
+    const logData = await api.getLogs();
+    setLogs(logData.reverse()); // Show newest first
+    setShowLogsModal(true);
+  };
+
+  const openSettings = async () => {
+    const config = await api.getConfig();
+    setAppConfig(config);
+    setShowSettingsModal(true);
+  };
+
+  const saveSettings = async (newConfig) => {
+    // 1. Optimistic Update (Immediate Feedback)
+    setAppConfig(newConfig);
+
+    // 2. Perform Save
+    const res = await api.saveConfig(newConfig);
+
+    // 3. Revert on failure
+    if (!res.success) {
+      console.error("Failed to save config, reverting.");
+      const old = await api.getConfig();
+      setAppConfig(old);
+    } else {
+      setAppConfig(res.config);
+    }
   };
 
   useEffect(() => {
@@ -162,13 +209,17 @@ function App() {
       document.title = "SMS Sync";
     }
 
-    // 2. Update Taskbar Badge
-    if ('setAppBadge' in navigator) {
-      if (totalUnread > 0) {
-        navigator.setAppBadge(totalUnread).catch(e => console.error("Badge error", e));
-      } else {
-        navigator.clearAppBadge().catch(e => console.error("Badge clear error", e));
+    // 2. Update Taskbar Badge (Safety Check)
+    try {
+      if ('setAppBadge' in navigator && navigator.setAppBadge) {
+        if (totalUnread > 0) {
+          navigator.setAppBadge(totalUnread).catch(() => { }); // Silent catch
+        } else {
+          navigator.clearAppBadge().catch(() => { }); // Silent catch
+        }
       }
+    } catch (e) {
+      // Ignore badge errors in non-PWA/webview contexts
     }
 
     setPrevUnreadCount(totalUnread);
@@ -212,57 +263,100 @@ function App() {
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-medium text-sm text-muted-foreground">Bağlı Cihazlar (ADB)</h3>
-                  <button
-                    onClick={fetchDevices}
-                    className="text-xs text-primary hover:underline flex items-center gap-1"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Yenile
-                  </button>
+              <div className="space-y-6">
+
+                {/* WiFi Connection */}
+                <div className="bg-muted/30 p-4 rounded-lg border border-border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wifi className="w-4 h-4 text-primary" />
+                    <h3 className="font-medium text-sm">Kablosuz Bağlantı (Wi-Fi)</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Telefondaki uygulamayı açın ve ekranda yazan IP adresini buraya girin.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Örn: 192.168.1.35"
+                      className="flex-1 p-2 rounded border border-input bg-background/50 text-sm focus:ring-1 focus:ring-primary outline-none"
+                      value={manualIp}
+                      onChange={(e) => setManualIp(e.target.value)}
+                    />
+                    <button
+                      onClick={() => handleConnect(manualIp, true)}
+                      disabled={connecting || !manualIp}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
+                    >
+                      {connecting ? '...' : 'Bağlan'}
+                    </button>
+                  </div>
                 </div>
 
-                {devices.length === 0 ? (
-                  <div className="p-4 bg-muted/30 rounded-lg text-center text-sm text-muted-foreground border border-dashed border-border">
-                    <p>Cihaz bulunamadı.</p>
-                    <p className="mt-1 text-xs opacity-70">Lütfen telefonunuzu USB ile bağlayın ve USB Hata Ayıklama modunu açın.</p>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border"></span></div>
+                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Veya USB (ADB)</span></div>
+                </div>
+
+                {/* ADB Connection */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-medium text-sm text-muted-foreground">Kablolu Cihazlar</h3>
+                    <button
+                      onClick={fetchDevices}
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Yenile
+                    </button>
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    {devices.map(dev => (
-                      <div key={dev.serial} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
-                        <div className="flex items-center gap-3">
-                          <Smartphone className="w-5 h-5 text-foreground" />
-                          <div>
-                            <p className="font-medium">{dev.serial}</p>
-                            <p className="text-xs text-muted-foreground capitalize">{dev.state}</p>
+
+                  {devices.length === 0 ? (
+                    <div className="p-4 bg-muted/30 rounded-lg text-center text-sm text-muted-foreground border border-dashed border-border">
+                      <p>Kablolu cihaz bulunamadı.</p>
+                      <p className="mt-1 text-xs opacity-70">Lütfen telefonunuzu USB ile bağlayın ve USB Hata Ayıklama modunu açın.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {devices.map(dev => (
+                        <div key={dev.serial} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
+                          <div className="flex items-center gap-3">
+                            <Smartphone className="w-5 h-5 text-foreground" />
+                            <div>
+                              <p className="font-medium">{dev.serial}</p>
+                              <p className="text-xs text-muted-foreground capitalize">{dev.state}</p>
+                            </div>
                           </div>
+                          <button
+                            onClick={() => handleConnect(dev.serial, false)}
+                            disabled={syncStatus.active && syncStatus.device === dev.serial}
+                            className={cn(
+                              "px-3 py-1.5 rounded-md text-sm font-medium transition-all",
+                              syncStatus.active && syncStatus.device === dev.serial
+                                ? "bg-green-500/10 text-green-500 cursor-default"
+                                : "bg-primary text-primary-foreground hover:bg-primary/90"
+                            )}
+                          >
+                            {syncStatus.active && syncStatus.device === dev.serial ? 'Bağlı' : 'Bağlan'}
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleConnect(dev.serial)}
-                          disabled={syncStatus.active && syncStatus.device === dev.serial}
-                          className={cn(
-                            "px-3 py-1.5 rounded-md text-sm font-medium transition-all",
-                            syncStatus.active && syncStatus.device === dev.serial
-                              ? "bg-green-500/10 text-green-500 cursor-default"
-                              : "bg-primary text-primary-foreground hover:bg-primary/90"
-                          )}
-                        >
-                          {syncStatus.active && syncStatus.device === dev.serial ? 'Bağlı' : 'Bağlan'}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="mt-6 pt-4 border-t border-border">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   {syncStatus.active ? (
                     <>
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      <span>Şu an senkronize ediliyor: <span className="text-foreground font-medium">{syncStatus.device}</span></span>
+                      {syncStatus.type === 'wifi' ? (
+                        <Wifi className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      )}
+                      <span>
+                        {syncStatus.type === 'wifi' ? 'Wi-Fi Senkronizasyon: ' : 'USB Senkronizasyon: '}
+                        <span className="text-foreground font-medium">{syncStatus.device}</span>
+                      </span>
                     </>
                   ) : (
                     <>
@@ -276,6 +370,143 @@ function App() {
           </div>
         )}
 
+        {/* Logs Modal */}
+        {showLogsModal && (
+          <div className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-card w-full max-w-2xl rounded-xl border border-border shadow-2xl p-6 h-[80vh] flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <History className="w-6 h-6 text-primary" />
+                  Bağlantı Kayıtları
+                </h2>
+                <button
+                  onClick={() => setShowLogsModal(false)}
+                  className="p-1 hover:bg-accent rounded-full"
+                >
+                  <XCircle className="w-6 h-6 text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto border border-border rounded-lg">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-muted text-muted-foreground">
+                    <tr>
+                      <th className="p-3 font-medium">Tür</th>
+                      <th className="p-3 font-medium">Mod</th>
+                      <th className="p-3 font-medium">Hedef</th>
+                      <th className="p-3 font-medium">Zaman</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-muted-foreground">Kayıt bulunamadı.</td>
+                      </tr>
+                    ) : (
+                      logs.map((log, idx) => (
+                        <tr key={idx} className="border-b border-border/50 hover:bg-muted/20">
+                          <td className="p-3">
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-xs font-bold uppercase",
+                              log.type === 'connect' ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
+                            )}>
+                              {log.type === 'connect' ? 'Bağlandı' : 'Ayrıldı'}
+                            </span>
+                          </td>
+                          <td className="p-3 uppercase text-xs">{log.mode}</td>
+                          <td className="p-3 font-mono text-xs">{log.target}</td>
+                          <td className="p-3 text-muted-foreground">
+                            {log.type === 'connect' ? formatDate(log.time, 'd MMM HH:mm:ss') : formatDate(log.end_time || log.time, 'd MMM HH:mm:ss')}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+        {/* Settings Modal */}
+        {showSettingsModal && (
+          <div className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-card w-full max-w-sm rounded-xl border border-border shadow-2xl p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Settings className="w-6 h-6 text-primary" />
+                  Ayarlar
+                </h2>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="p-1 hover:bg-accent rounded-full"
+                >
+                  <XCircle className="w-6 h-6 text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Sesli Bildirim</h3>
+                    <p className="text-xs text-muted-foreground">Yeni mesaj gelince özel sesi çal.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={appConfig.sound_enabled}
+                      onChange={(e) => setAppConfig({ ...appConfig, sound_enabled: e.target.checked })}
+                    />
+                    <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Masaüstü Bildirimi</h3>
+                    <p className="text-xs text-muted-foreground">Uygulama arka plandayken bildirim göster.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={appConfig.notification_enabled}
+                      onChange={(e) => setAppConfig({ ...appConfig, notification_enabled: e.target.checked })}
+                    />
+                    <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                <div className="pt-4 flex justify-between gap-2">
+                  <button
+                    onClick={() => api.testNotification()}
+                    className="px-4 py-2 text-sm font-medium border border-input hover:bg-muted rounded-md transition-colors"
+                  >
+                    Test Bildirimi
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowSettingsModal(false)}
+                      className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-md transition-colors"
+                    >
+                      Vazgeç
+                    </button>
+                    <button
+                      onClick={() => saveSettings(appConfig).then(() => setShowSettingsModal(false))}
+                      className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors shadow"
+                    >
+                      Kaydet
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+        }
+
         {/* Sidebar - Contact List */}
         <div className="w-80 border-r border-border flex flex-col bg-card">
           {/* Header */}
@@ -288,13 +519,32 @@ function App() {
               <button
                 onClick={() => { setShowDeviceModal(true); fetchDevices(); }}
                 className={cn("p-2 hover:bg-accent rounded-full transition-colors", !syncStatus.active && "animate-pulse text-yellow-500")}
-                title="Cihaz Ayarları"
+                title="Cihaz Bağla"
+              >
+                <Smartphone className="w-4 h-4" />
+              </button>
+              <button
+                onClick={openSettings}
+                className="p-2 hover:bg-accent rounded-full transition-colors"
+                title="Ayarlar"
               >
                 <Settings className="w-4 h-4" />
               </button>
               <button onClick={fetchData} className="p-2 hover:bg-accent rounded-full transition-colors">
                 <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
               </button>
+              <button onClick={openLogs} className="p-2 hover:bg-accent rounded-full transition-colors" title="Bağlantı Kayıtları">
+                <History className="w-4 h-4" />
+              </button>
+              {syncStatus.active && (
+                <button
+                  onClick={handleDisconnect}
+                  className="p-2 hover:bg-red-500/10 text-red-500 rounded-full transition-colors"
+                  title="Bağlantıyı Kes"
+                >
+                  <Power className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -464,8 +714,8 @@ function App() {
             </div>
           )}
         </div>
-      </div>
-    </ErrorBoundary>
+      </div >
+    </ErrorBoundary >
   );
 }
 

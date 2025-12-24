@@ -40,3 +40,17 @@ yarn-error.log*
 android_app/build/
 android_app/.gradle/
 android_app/local.properties
+
+# SMS App Specifics
+backend/config.json
+backend/connection_logs.json
+SMSSync_Final_*/
+dist_*/
+sms_sync.spec
+*.spec
+backend/sms_debug.txt
+
+# Temp/Test Scripts (Cleanup)
+tests/
+test_*.py
+quick_test.py
